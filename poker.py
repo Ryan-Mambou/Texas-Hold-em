@@ -65,8 +65,6 @@ def evaluate_hand(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
 
 def _evaluate_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
     """Evaluate exactly 5 cards. Returns best category with chosen5 and tiebreak."""
-    result = _check_one_pair(cards)
-    if result:        return result
     
     result = _check_straight(cards)
     if result:
@@ -74,6 +72,8 @@ def _evaluate_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
     result = _check_two_pair(cards)
     if result:
         return result
+    result = _check_one_pair(cards)
+    if result:        return result
     return _high_card(cards)
 
 def _high_card(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
