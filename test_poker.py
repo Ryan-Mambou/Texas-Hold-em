@@ -3,8 +3,7 @@ TDD tests for Texas Hold'em hand evaluator.
 Incremental development: small steps, one category at a time.
 """
 import unittest
-
-
+from poker import parse_card, Card
 
 # ============== Card representation ==============
 class TestCardRepresentation(unittest.TestCase):
@@ -23,3 +22,5 @@ class TestCardRepresentation(unittest.TestCase):
         self.assertEqual(parse_card("QD").rank, 12)
         self.assertEqual(parse_card("KH").rank, 13)
 
+if __name__ == "__main__":
+    unittest.main()
