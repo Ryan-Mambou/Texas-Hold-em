@@ -3,7 +3,7 @@ TDD tests for Texas Hold'em hand evaluator.
 Incremental development: small steps, one category at a time.
 """
 import unittest
-from poker import parse_card, Card, HandCategory, evaluate_hand
+from poker import parse_card, Card, HandCategory, evaluate_hand, parse_cards
 
 # ============== Card representation ==============
 class TestCardRepresentation(unittest.TestCase):
@@ -104,6 +104,36 @@ class TestStraight(unittest.TestCase):
         cards = [parse_card(c) for c in ["QS", "KH", "AD", "2C", "3S"]]
         category, _, _ = evaluate_hand(cards)
         self.assertNotEqual(category, HandCategory.STRAIGHT)
+
+# ============== Straight flush ==============
+class TestStraightFlush(unittest.TestCase):
+    def test_straight_flush_detection(self):
+        cards = parse_cards("9S", "10S", "JS", "QS", "KS")
+        category, chosen5, tb = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.STRAIGHT_FLUSH)
+        self.assertEqual(tb[0], 13)
+
+# ============== Best of 7  ==============
+class TestBestOfSeven(unittest.TestCase):
+    """Tests for selecting best 5 from 7 cards."""
+
+    def test_board_plays(self):
+        """When board has straight flush, player can play board (zero hole cards)."""
+        board = [parse_card(c) for c in ["9S", "10S", "JS", "QS", "KS"]]  # straight flush
+        hole = [parse_card(c) for c in ["2H", "3D"]]  # irrelevant
+        cards = board + hole
+        category, chosen5, _ = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.STRAIGHT_FLUSH)
+        self.assertEqual(set(c.rank for c in chosen5), {13, 12, 11, 10, 9})
+
+    def test_one_hole_card_improves(self):
+        """One hole card can improve hand (e.g. pair on board + one pair in hole)."""
+        board = [parse_card(c) for c in ["AS", "KH", "10D", "5C", "2S"]]
+        hole = [parse_card(c) for c in ["AH", "3D"]]
+        cards = board + hole
+        category, chosen5, _ = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.ONE_PAIR)
+        self.assertIn(14, [c.rank for c in chosen5])
 
 if __name__ == "__main__":
     unittest.main()

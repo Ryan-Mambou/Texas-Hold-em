@@ -144,3 +144,5 @@ def _check_straight(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]
         high = 5 if straight_ranks == [5, 4, 3, 2, 14] else max(straight_ranks)
         return HandCategory.STRAIGHT, chosen[:5], (high,)
     return None
+
+
