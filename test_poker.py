@@ -3,7 +3,7 @@ TDD tests for Texas Hold'em hand evaluator.
 Incremental development: small steps, one category at a time.
 """
 import unittest
-from poker import parse_card, Card, HandCategory, evaluate_hand, parse_cards
+from poker import parse_card, Card, HandCategory, evaluate_hand, parse_cards, evaluate_players
 
 # ============== Card representation ==============
 class TestCardRepresentation(unittest.TestCase):

@@ -80,6 +80,9 @@ def _evaluate_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
     result = _check_straight(cards)
     if result:
         return result
+    result = _check_three_of_a_kind(cards)
+    if result:
+        return result
     result = _check_two_pair(cards)
     if result:
         return result
@@ -113,6 +116,17 @@ def _check_one_pair(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]
             chosen = pair + kickers[:3]
             tb = (rank,) + tuple(k.rank for k in kickers[:3])
             return HandCategory.ONE_PAIR, chosen, tb
+    return None
+
+
+def _check_three_of_a_kind(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple] | None:
+    counts = _rank_counts(cards)
+    for rank in [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]:
+        if counts.get(rank, 0) == 3:
+            trips = [c for c in cards if c.rank == rank]
+            kickers = sorted([c for c in cards if c.rank != rank], key=lambda c: c.rank, reverse=True)
+            chosen = trips + kickers[:2]
+            return HandCategory.THREE_OF_A_KIND, chosen, (rank, kickers[0].rank, kickers[1].rank)
     return None
 
 
@@ -216,3 +230,36 @@ def _check_straight(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]
         high = 5 if straight_ranks == [5, 4, 3, 2, 14] else max(straight_ranks)
         return HandCategory.STRAIGHT, chosen[:5], (high,)
     return None
+
+def evaluate_players(
+    board: List[Card],
+    players: List[List[Card]],
+) -> dict:
+    """
+    Evaluate all players and return results.
+    Returns dict with: winners (list of player indices), player_results
+    (each with category, chosen5, hand_category_name).
+    """
+    results = []
+    for hole_cards in players:
+        cards = list(board) + list(hole_cards)
+        category, chosen5, tiebreak = evaluate_hand(cards)
+        results.append({
+            "category": category,
+            "chosen5": chosen5,
+            "hand_category_name": category.name.replace("_", " ").title(),
+            "_tiebreak": tiebreak,
+        })
+    best_idx = 0
+    best_tb = results[0]["_tiebreak"]
+    for i, r in enumerate(results):
+        if r["category"] > results[best_idx]["category"]:
+            best_idx = i
+            best_tb = r["_tiebreak"]
+        elif r["category"] == results[best_idx]["category"] and r["_tiebreak"] > best_tb:
+            best_idx = i
+            best_tb = r["_tiebreak"]
+    winners = [i for i, r in enumerate(results) if r["category"] == results[best_idx]["category"] and r["_tiebreak"] == best_tb]
+    for r in results:
+        del r["_tiebreak"]
+    return {"winners": winners, "player_results": results}
