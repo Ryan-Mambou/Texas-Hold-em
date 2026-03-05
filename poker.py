@@ -65,7 +65,9 @@ def evaluate_hand(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
 
 def _evaluate_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
     """Evaluate exactly 5 cards. Returns best category with chosen5 and tiebreak."""
-    
+    result = _check_straight_flush(cards)
+    if result:
+        return result
     result = _check_straight(cards)
     if result:
         return result
@@ -116,6 +118,26 @@ def _check_two_pair(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]
         p2 = [c for c in cards if c.rank == low_pair][:2]
         chosen = p1 + p2 + [kicker]
         return HandCategory.TWO_PAIR, chosen, (high_pair, low_pair, kicker.rank)
+    return None
+
+
+def _check_straight_flush(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple] | None:
+    """Check for straight flush: 5 cards same suit forming a straight."""
+    by_suit = {}
+    for c in cards:
+        by_suit.setdefault(c.suit, []).append(c)
+    for suit, suited in by_suit.items():
+        if len(suited) >= 5:
+            straight_ranks = _get_straight_from_ranks([c.rank for c in suited])
+            if straight_ranks:
+                chosen = []
+                for r in straight_ranks:
+                    for c in suited:
+                        if c.rank == r:
+                            chosen.append(c)
+                            break
+                high = 5 if straight_ranks == [5, 4, 3, 2, 14] else max(straight_ranks)
+                return HandCategory.STRAIGHT_FLUSH, chosen[:5], (high,)
     return None
 
 
