@@ -65,7 +65,15 @@ def evaluate_hand(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
 
 def _evaluate_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
     """Evaluate exactly 5 cards. Returns best category with chosen5 and tiebreak."""
-    
+    result = _check_four_of_a_kind(cards)
+    if result:
+        return result
+    result = _check_full_house(cards)
+    if result:
+        return result
+    result = _check_flush(cards)
+    if result:
+        return result
     result = _check_straight(cards)
     if result:
         return result
@@ -129,6 +137,47 @@ def _get_straight_from_ranks(ranks: List[int]) -> List[int] | None:
         run = list(range(high, high - 5, -1))
         if all(r in rset for r in run):
             return run
+    return None
+
+
+def _check_four_of_a_kind(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple] | None:
+    counts = _rank_counts(cards)
+    for rank in [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]:
+        if counts.get(rank, 0) == 4:
+            quad = [c for c in cards if c.rank == rank]
+            kickers = sorted([c for c in cards if c.rank != rank], key=lambda c: c.rank, reverse=True)
+            chosen = quad + kickers[:1]
+            return HandCategory.FOUR_OF_A_KIND, chosen, (rank, kickers[0].rank)
+    return None
+
+
+def _check_full_house(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple] | None:
+    counts = _rank_counts(cards)
+    trips_candidates = [r for r in [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2] if counts.get(r, 0) >= 3]
+    pair_candidates = [r for r in [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2] if counts.get(r, 0) >= 2]
+    if not trips_candidates:
+        return None
+    trips_rank = max(trips_candidates)
+    pair_rank = max((r for r in pair_candidates if r != trips_rank), default=None)
+    if pair_rank is None and len(trips_candidates) >= 2:
+        pair_rank = min(trips_candidates)
+    if pair_rank is None:
+        return None
+    trips = [c for c in cards if c.rank == trips_rank][:3]
+    pairs = [c for c in cards if c.rank == pair_rank][:2]
+    chosen = trips + pairs
+    return HandCategory.FULL_HOUSE, chosen, (trips_rank, pair_rank)
+
+
+def _check_flush(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple] | None:
+    by_suit = {}
+    for c in cards:
+        by_suit.setdefault(c.suit, []).append(c)
+    for suit, suited in by_suit.items():
+        if len(suited) >= 5:
+            chosen = sorted(suited, key=lambda c: c.rank, reverse=True)[:5]
+            tb = tuple(c.rank for c in chosen)
+            return HandCategory.FLUSH, chosen, tb
     return None
 
 def _check_straight(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple] | None:
