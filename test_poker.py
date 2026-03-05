@@ -3,7 +3,7 @@ TDD tests for Texas Hold'em hand evaluator.
 Incremental development: small steps, one category at a time.
 """
 import unittest
-from poker import parse_card, Card, HandCategory, evaluate_hand
+from poker import parse_card, Card, HandCategory, evaluate_hand,parse_cards
 
 # ============== Card representation ==============
 class TestCardRepresentation(unittest.TestCase):
@@ -104,6 +104,30 @@ class TestStraight(unittest.TestCase):
         cards = [parse_card(c) for c in ["QS", "KH", "AD", "2C", "3S"]]
         category, _, _ = evaluate_hand(cards)
         self.assertNotEqual(category, HandCategory.STRAIGHT)
+# ============== Four of a kind ==============
+class TestFourOfAKind(unittest.TestCase):
+    def test_four_of_a_kind_detection(self):
+        cards = parse_cards("AS", "AH", "AD", "AC", "KS")
+        category, chosen5, tb = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.FOUR_OF_A_KIND)
+        self.assertEqual(tb[0], 14)
+        self.assertEqual(tb[1], 13)  # kicker
+
+# ============== Full house ==============
+class TestFullHouse(unittest.TestCase):
+    def test_full_house_detection(self):
+        cards = parse_cards("AS", "AH", "AD", "KS", "KH")
+        category, chosen5, tb = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.FULL_HOUSE)
+        self.assertEqual(tb, (14, 13))  # trips, pair
+        
+# ============== Flush ==============
+class TestFlush(unittest.TestCase):
+    def test_flush_detection(self):
+        cards = [parse_card(c) for c in ["AS", "10S", "5S", "3S", "2S"]]
+        category, chosen5, tb = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.FLUSH)
+        self.assertEqual([c.rank for c in chosen5], [14, 10, 5, 3, 2])
 
 if __name__ == "__main__":
     unittest.main()
