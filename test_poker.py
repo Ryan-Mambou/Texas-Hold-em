@@ -159,5 +159,23 @@ class TestBestOfSeven(unittest.TestCase):
         self.assertEqual(category, HandCategory.ONE_PAIR)
         self.assertIn(14, [c.rank for c in chosen5])
 
+# ============== Multi-player evaluation ==============
+class TestEvaluatePlayers(unittest.TestCase):
+    def test_single_winner(self):
+        board = [parse_card(c) for c in ["AS", "KH", "10D", "5C", "2S"]]
+        p1 = [parse_card(c) for c in ["AH", "AD"]]  # three aces
+        p2 = [parse_card(c) for c in ["2H", "3D"]]  # pair of 2s
+        result = evaluate_players(board, [p1, p2])
+        self.assertEqual(result["winners"], [0])
+        self.assertEqual(result["player_results"][0]["category"], HandCategory.THREE_OF_A_KIND)
+
+    def test_split_pot_tie(self):
+        """When two players have same best hand, split."""
+        board = parse_cards("AS", "KH", "10D", "5C", "2S")
+        p1 = parse_cards("AH", "KD")  # two pair A and K
+        p2 = parse_cards("AD", "KC")  # same two pair
+        result = evaluate_players(board, [p1, p2])
+        self.assertEqual(set(result["winners"]), {0, 1})
+
 if __name__ == "__main__":
     unittest.main()
