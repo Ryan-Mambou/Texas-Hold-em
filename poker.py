@@ -44,6 +44,13 @@ def parse_cards(*strings: str) -> List[Card]:
     """Parse multiple cards from strings."""
     return [parse_card(s) for s in strings]
 
+def _rank_counts(cards: List[Card]) -> dict:
+    """Count cards per rank."""
+    counts = {}
+    for c in cards:
+        counts[c.rank] = counts.get(c.rank, 0) + 1
+    return counts
+
 def evaluate_hand(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
     """
     Evaluate best 5-card hand from given cards (must be 5-7 cards).
@@ -58,7 +65,10 @@ def evaluate_hand(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
 
 def _evaluate_five(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
     """Evaluate exactly 5 cards. Returns best category with chosen5 and tiebreak."""
+    result = _check_one_pair(cards)
+    if result:        return result
     return _high_card(cards)
+
 
 def _high_card(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
     sorted_cards = sorted(cards, key=lambda c: c.rank, reverse=True)
@@ -76,3 +86,14 @@ def _best_of_seven(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple]:
         if cat > best_category or (cat == best_category and tb > best_tiebreak):
             best_category, best_chosen, best_tiebreak = cat, chosen, tb
     return best_category, best_chosen, best_tiebreak
+
+def _check_one_pair(cards: List[Card]) -> Tuple[HandCategory, List[Card], tuple] | None:
+    counts = _rank_counts(cards)
+    for rank in [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]:
+        if counts.get(rank, 0) == 2:
+            pair = [c for c in cards if c.rank == rank]
+            kickers = sorted([c for c in cards if c.rank != rank], key=lambda c: c.rank, reverse=True)
+            chosen = pair + kickers[:3]
+            tb = (rank,) + tuple(k.rank for k in kickers[:3])
+            return HandCategory.ONE_PAIR, chosen, tb
+    return None
