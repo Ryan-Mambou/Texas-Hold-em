@@ -10,7 +10,7 @@ A hand comparison module for Texas Hold'em poker. Given 5 community cards (the b
 
 - **Card representation**: `Card` dataclass with rank (2–14, Ace=14) and suit (S, H, D, C)
 - **Card parsing**: `parse_card()` and `parse_cards()` for strings like `"AS"`, `"10H"`
-- **Hand evaluation**: `evaluate_hand()` for 5 or 7 cards, returning best category and tiebreak values
+- **Hand evaluation**: `evaluate_hand()` for 5 or 7 cards, returning best category, chosen5 (the 5 cards forming the hand), and tiebreak values
 - **Best-of-7 selection**: Chooses the best 5-card hand from 7 cards (board + hole), including “board plays” when the board alone is best
 - **Multi-player evaluation**: `evaluate_players()` compares all players and returns winner(s), with support for split pots
 
@@ -43,8 +43,9 @@ from poker import parse_cards, evaluate_hand, evaluate_players
 
 # Evaluate a single hand (5 or 7 cards)
 cards = parse_cards("AS", "KH", "10D", "5C", "2S")
-category, _, tiebreak = evaluate_hand(cards)
+category, chosen5, tiebreak = evaluate_hand(cards)
 # category: HandCategory enum
+# chosen5: list of 5 Card objects forming the best hand
 # tiebreak: tuple for comparison
 
 # Evaluate multiple players
@@ -53,7 +54,7 @@ player1_hole = parse_cards("AH", "AD")
 player2_hole = parse_cards("2H", "3D")
 result = evaluate_players(board, [player1_hole, player2_hole])
 # result["winners"]: list of winning player indices (e.g. [0] or [0, 1] for split)
-# result["player_results"][i]: dict with "category", "hand_category_name"
+# result["player_results"][i]: dict with "category", "chosen5", "hand_category_name"
 ```
 
 ---
@@ -81,6 +82,21 @@ When two hands share the same category:
 
 ---
 
+## Chosen5
+
+The evaluator returns the exact 5 cards chosen as each player's best hand (`chosen5`). Requirements:
+
+- **Exactly 5 distinct cards**: Must contain 5 cards, no duplicates
+- **Subset of available**: Must be a subset of the player's 7 cards (board + hole)
+- **Consistent ordering** (for deterministic tests):
+  - **Straight / Straight flush**: Highest to lowest in straight order (wheel: 5,4,3,2,A)
+  - **Four of a kind**: Quad cards first, then kicker
+  - **Two pair**: Higher pair, lower pair, kicker
+  - **One pair**: Pair first, then kickers descending
+  - **Flush / High card**: Descending ranks
+
+---
+
 ## Input validity
 
 The implementation assumes there are **no duplicate cards**. Duplicate cards are not validated; behavior is undefined if duplicates are present.
@@ -93,7 +109,7 @@ The implementation assumes there are **no duplicate cards**. Duplicate cards are
 Texas-Hold-em/
 ├── poker.py      # Main module: Card, HandCategory, parse_card, parse_cards,
 │                 # evaluate_hand, evaluate_players
-├── test_poker.py # Unit tests (19 tests)
+├── test_poker.py # Unit tests (26 tests)
 ├── .gitignore    # __pycache__/
 └── README.md     # This file
 ```
@@ -121,3 +137,4 @@ python3 test_poker.py
 - Ace-low straight (wheel)
 - No wrap-around straight
 - Single winner and split pot (multi-player)
+- Chosen5: exactly 5 cards, subset of 7, ordering (straight, wheel, four of a kind, two pair), evaluate_players includes chosen5

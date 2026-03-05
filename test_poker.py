@@ -159,6 +159,64 @@ class TestBestOfSeven(unittest.TestCase):
         self.assertEqual(category, HandCategory.ONE_PAIR)
         self.assertIn(14, [c.rank for c in chosen5])
 
+# ============== Chosen5 ==============
+class TestChosen5(unittest.TestCase):
+    """Tests for chosen5: exactly 5 cards, subset of available, consistent ordering."""
+
+    def test_chosen5_has_exactly_five_cards(self):
+        """chosen5 must contain exactly 5 distinct cards."""
+        cards = parse_cards("AS", "KH", "10D", "5C", "2S")
+        _, chosen5, _ = evaluate_hand(cards)
+        self.assertEqual(len(chosen5), 5)
+        self.assertEqual(len(set((c.rank, c.suit) for c in chosen5)), 5)
+
+    def test_chosen5_subset_of_seven_cards(self):
+        """chosen5 must be a subset of the player's 7 available cards."""
+        board = parse_cards("AS", "KH", "10D", "5C", "2S")
+        hole = parse_cards("AH", "3D")
+        cards = board + hole
+        _, chosen5, _ = evaluate_hand(cards)
+        all_cards = set((c.rank, c.suit) for c in cards)
+        for c in chosen5:
+            self.assertIn((c.rank, c.suit), all_cards)
+
+    def test_chosen5_straight_ordering_ace_high(self):
+        """Straight: highest-to-lowest in straight order."""
+        cards = parse_cards("10S", "JH", "QD", "KC", "AS")
+        _, chosen5, _ = evaluate_hand(cards)
+        self.assertEqual([c.rank for c in chosen5], [14, 13, 12, 11, 10])
+
+    def test_chosen5_straight_ordering_wheel(self):
+        """Wheel: 5,4,3,2,A."""
+        cards = parse_cards("AS", "2H", "3D", "4C", "5S")
+        _, chosen5, _ = evaluate_hand(cards)
+        self.assertEqual([c.rank for c in chosen5], [5, 4, 3, 2, 14])
+
+    def test_chosen5_four_of_a_kind_ordering(self):
+        """Four of a kind: quad first, then kicker."""
+        cards = parse_cards("AS", "AH", "AD", "AC", "KS")
+        _, chosen5, _ = evaluate_hand(cards)
+        self.assertEqual([c.rank for c in chosen5[:4]], [14, 14, 14, 14])
+        self.assertEqual(chosen5[4].rank, 13)
+
+    def test_chosen5_two_pair_ordering(self):
+        """Two pair: higher pair, lower pair, kicker."""
+        cards = parse_cards("AS", "AH", "KS", "KH", "10D")
+        _, chosen5, _ = evaluate_hand(cards)
+        ranks = [c.rank for c in chosen5]
+        self.assertEqual(ranks[:2], [14, 14])
+        self.assertEqual(ranks[2:4], [13, 13])
+        self.assertEqual(ranks[4], 10)
+
+    def test_chosen5_evaluate_players_includes_chosen5(self):
+        """evaluate_players returns chosen5 for each player."""
+        board = parse_cards("AS", "KH", "10D", "5C", "2S")
+        p1 = parse_cards("AH", "AD")
+        result = evaluate_players(board, [p1])
+        self.assertIn("chosen5", result["player_results"][0])
+        self.assertEqual(len(result["player_results"][0]["chosen5"]), 5)
+
+
 # ============== Multi-player evaluation ==============
 class TestEvaluatePlayers(unittest.TestCase):
     def test_single_winner(self):
