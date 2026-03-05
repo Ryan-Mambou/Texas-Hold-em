@@ -72,6 +72,38 @@ class TestOnePair(unittest.TestCase):
         _, _, tb2 = evaluate_hand(pair_low)
         self.assertGreater(tb1, tb2)
 
+# ============== Two pair ==============
+class TestTwoPair(unittest.TestCase):
+    def test_two_pair_detection(self):
+        cards = [parse_card(c) for c in ["AS", "AH", "KS", "KH", "10D"]]
+        category, chosen5, tb = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.TWO_PAIR)
+        self.assertEqual(tb[0], 14)  # high pair
+        self.assertEqual(tb[1], 13)  # low pair
+        self.assertEqual(tb[2], 10)  # kicker
+
+
+# ============== Straight ==============
+class TestStraight(unittest.TestCase):
+    def test_straight_ace_high(self):
+        """10-J-Q-K-A is Ace-high straight (mixed suits for plain straight)."""
+        cards = [parse_card(c) for c in ["10S", "JH", "QD", "KC", "AS"]]
+        category, chosen5, tb = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.STRAIGHT)
+        self.assertEqual(tb[0], 14)
+
+    def test_straight_ace_low_wheel(self):
+        """A-2-3-4-5 is wheel (5-high straight)."""
+        cards = [parse_card(c) for c in ["AS", "2H", "3D", "4C", "5S"]]
+        category, chosen5, tb = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.STRAIGHT)
+        self.assertEqual(tb[0], 5)  # wheel is 5-high
+
+    def test_no_wrap_around_straight(self):
+        """Q-K-A-2-3 is NOT a valid straight."""
+        cards = [parse_card(c) for c in ["QS", "KH", "AD", "2C", "3S"]]
+        category, _, _ = evaluate_hand(cards)
+        self.assertNotEqual(category, HandCategory.STRAIGHT)
 
 if __name__ == "__main__":
     unittest.main()
