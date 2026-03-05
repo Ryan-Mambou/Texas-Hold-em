@@ -42,6 +42,36 @@ class TestHighCard(unittest.TestCase):
         _, _, tb1 = evaluate_hand(hand1)
         _, _, tb2 = evaluate_hand(hand2)
         self.assertGreater(tb1, tb2)
+# ============== One pair ==============
+class TestOnePair(unittest.TestCase):
+    """Tests for one pair detection."""
+
+    def test_one_pair_detection(self):
+        """Two cards of same rank -> one pair."""
+        cards = [parse_card(c) for c in ["AS", "AH", "KD", "10C", "2S"]]
+        category, chosen5, _ = evaluate_hand(cards)
+        self.assertEqual(category, HandCategory.ONE_PAIR)
+        # chosen5: pair first (by rank), then kickers descending
+        ranks = [c.rank for c in chosen5]
+        self.assertEqual(ranks[:2], [14, 14])
+        self.assertEqual(sorted(ranks[2:], reverse=True), [13, 10, 2])
+
+    def test_one_pair_beats_high_card(self):
+        """One pair beats high card."""
+        pair = [parse_card(c) for c in ["2S", "2H", "AS", "KD", "10C"]]
+        high = [parse_card(c) for c in ["AS", "KH", "QD", "JC", "9S"]]
+        c1, _, _ = evaluate_hand(pair)
+        c2, _, _ = evaluate_hand(high)
+        self.assertGreater(c1, c2)
+
+    def test_one_pair_tiebreak_pair_rank_then_kickers(self):
+        """Compare pair rank first, then kickers."""
+        pair_high = [parse_card(c) for c in ["AS", "AH", "KD", "10C", "2S"]]
+        pair_low = [parse_card(c) for c in ["KS", "KH", "AD", "10C", "2S"]]
+        _, _, tb1 = evaluate_hand(pair_high)
+        _, _, tb2 = evaluate_hand(pair_low)
+        self.assertGreater(tb1, tb2)
+
 
 if __name__ == "__main__":
     unittest.main()
